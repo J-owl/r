@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>정약용 음성 인터뷰</title>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 30px 20px;
+      background: #f5f5f5;
+    }
+
+    h1 {
+      margin-bottom: 30px;
+    }
+
+    button {
+      font-size: 20px;
+      padding: 15px 25px;
+      margin: 10px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+    }
+
+    #micButton {
+      background: #222;
+      color: white;
+    }
+
+    #speakButton {
+      background: #555;
+      color: white;
+    }
+
+    #result {
+      margin-top: 30px;
+      padding: 20px;
+      background: white;
+      border-radius: 15px;
+      min-height: 80px;
+      font-size: 18px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>정약용 음성 인터뷰</h1>
+
+  <p>마이크 버튼을 누르고 질문해 보세요.</p>
+
+  <button id="micButton">🎤 질문하기</button>
+
+  <div id="result">
+    여기에 음성 인식 결과가 표시됩니다.
+  </div>
+
+  <button id="speakButton">🔊 다시 읽기</button>
+
+  <script>
+    const micButton = document.getElementById("micButton");
+    const speakButton = document.getElementById("speakButton");
+    const result = document.getElementById("result");
+
+    const SpeechRecognition =
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition;
+
+    let recognition;
+
+    if (SpeechRecognition) {
+
+      recognition = new SpeechRecognition();
+
+      recognition.lang = "ko-KR";
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      micButton.onclick = function () {
+        result.innerText = "🎤 듣고 있습니다...";
+        recognition.start();
+      };
+
+      recognition.onresult = function (event) {
+
+        const text = event.results[0][0].transcript;
+
+        result.innerText = "내 질문:\n" + text;
+
+        // 현재는 테스트 단계라서
+        // 내가 말한 내용을 그대로 음성으로 읽습니다.
+        speak(text);
+      };
+
+      recognition.onerror = function (event) {
+        result.innerText =
+          "음성 인식 오류가 발생했습니다.\n오류: " + event.error;
+      };
+
+    } else {
+
+      result.innerText =
+        "이 브라우저에서는 음성 인식을 지원하지 않습니다.";
+    }
+
+    function speak(text) {
+
+      speechSynthesis.cancel();
+
+      const utterance =
+        new SpeechSynthesisUtterance(text);
+
+      utterance.lang = "ko-KR";
+      utterance.rate = 0.9;
+
+      speechSynthesis.speak(utterance);
+    }
+
+    speakButton.onclick = function () {
+
+      const text = result.innerText
+        .replace("내 질문:\n", "");
+
+      if (text.trim()) {
+        speak(text);
+      }
+    };
+  </script>
+
+</body>
+</html>
