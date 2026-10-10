@@ -137,7 +137,7 @@ function speak(text) {```
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = "ko-KR";
       utterance.rate = 0.88;
-      utterance.pitch = 0.85;
+      utterance.pitch = 0.7;
 
       const voices = window.speechSynthesis.getVoices();
       const koreanVoice = voices.find(v => v.lang.toLowerCase().startsWith("ko"));
