@@ -1,22 +1,19 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>정약용 음성 인터뷰</title>
-
   <style>
     body {
       font-family: sans-serif;
       text-align: center;
       padding: 30px 20px;
       background: #f5f5f5;
+      color: #222;
     }
-
-    h1 {
-      margin-bottom: 30px;
-    }
-
+    h1 { margin-bottom: 30px; }
     button {
       font-size: 20px;
       padding: 15px 25px;
@@ -25,112 +22,165 @@
       border: none;
       cursor: pointer;
     }
-
-    #micButton {
-      background: #222;
-      color: white;
-    }
-
-    #speakButton {
-      background: #555;
-      color: white;
-    }
-
+    #micButton { background: #222; color: white; }
+    #speakButton { background: #555; color: white; }
     #result {
       margin-top: 30px;
       padding: 20px;
       background: white;
       border-radius: 15px;
-      min-height: 80px;
+      min-height: 100px;
       font-size: 18px;
-      line-height: 1.6;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
     }
+    #status { color: #555; font-size: 14px; }
   </style>
 </head>
-
 <body>
-
   <h1>정약용 음성 인터뷰</h1>
-
   <p>마이크 버튼을 누르고 질문해 보세요.</p>
 
   <button id="micButton">🎤 질문하기</button>
+  <p id="status">인터뷰를 시작할 준비가 되었습니다.</p>
 
-  <div id="result">
-    여기에 음성 인식 결과가 표시됩니다.
-  </div>
+  <div id="result">여기에 질문과 정약용의 답변이 표시됩니다.</div>
 
-  <button id="speakButton">🔊 다시 읽기</button>
+  <button id="speakButton">🔊 정약용 답변 듣기</button>
 
   <script>
     const micButton = document.getElementById("micButton");
     const speakButton = document.getElementById("speakButton");
     const result = document.getElementById("result");
+    const status = document.getElementById("status");
+
+    let lastAnswer = "";
+    let recognition;
+    let isListening = false;
+
+    const answers = [
+      {
+        keywords: ["목민심서", "목민", "지방 수령", "애민 정신"],
+        answer: "목민심서는 제가 목민관으로 재직할 당시 목민할 마음은 가졌지만, 실천할 수 없었던 현실을 담은 책입니다. 이 목민심서에는 지방 수령으로서 지켜야 할 원칙과 규범들이 적혀 있고, 백성에 대한 연민과 동정을 표현하였습니다. 유교적 정치 질서 속에서 청렴과 애민으로 현실적 문제를 해결하기 위한 대안을 제시한 책이기도 합니다."
+      },
+      {
+        keywords: ["흠흠신서", "형사사건", "처형", "심리", "조사 과정"],
+        answer: "흠흠신서는 형사사건의 조사, 심리, 처형 과정을 다루는 관리들을 계몽하기 위해 집필된 책입니다. 지금 여러분이 살아가는 세상은 제가 살았던 시대와 굉장히 다릅니다. 당시에는 형사사건이 형식적이고 무성의하게 진행되는 경우가 있어 이에 관심을 가지게 되었지요."
+      },
+      {
+        keywords: ["서흥 현감", "서흥현감", "김천의", "토산", "검시", "아전", "돈만 밝히"],
+        answer: "말씀하신 것처럼 돈만 밝히는 아전이 너무나도 많았습니다만, 서흥 현감은 아랫사람들에게 맡기지 않고 검시 절차를 성심껏 밟아 그들과는 다른 모습을 보여주었습니다. 조사 방법이 탁월했을 뿐더러 보고서의 내용도 훌륭했습니다. 돈에 눈이 먼 자들 사이에서 서흥 현감과 같은 모범을 보여주는 현감을 찾기란 사막에서 바늘 찾기였습니다."
+      }
+    ];
 
     const SpeechRecognition =
-      window.SpeechRecognition ||
-      window.webkitSpeechRecognition;
+      window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    let recognition;
+    function findAnswer(question) {
+      const q = question.replace(/\s/g, "").toLowerCase();
+
+      // 질문의 핵심 주제를 우선 판별합니다.
+      if (q.includes("목민심서") || q.includes("목민")) {
+        return answers[0].answer;
+      }
+      if (q.includes("서흥현감") || q.includes("김천의") ||
+          q.includes("토산") || q.includes("검시") ||
+          q.includes("아전") || q.includes("돈만밝히")) {
+        return answers[2].answer;
+      }
+      if (q.includes("흠흠신서") || q.includes("형사사건") ||
+          q.includes("처형") || q.includes("심리")) {
+        return answers[1].answer;
+      }
+
+      for (const item of answers) {
+        if (item.keywords.some(word =>
+          q.includes(word.replace(/\s/g, "").toLowerCase())
+        )) {
+          return item.answer;
+        }
+      }
+
+      return "그 질문에 맞는 답변은 아직 준비된 대본에서 찾지 못했소. 목민심서, 흠흠신서 또는 서흥 현감 사건에 관해 다시 질문해 주시오.";
+    }
+
+    function speak(text) {
+      if (!text) return;
+
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "ko-KR";
+      utterance.rate = 0.88;
+      utterance.pitch = 0.85;
+
+      const voices = window.speechSynthesis.getVoices();
+      const koreanVoice = voices.find(v => v.lang.toLowerCase().startsWith("ko"));
+      if (koreanVoice) utterance.voice = koreanVoice;
+
+      window.speechSynthesis.speak(utterance);
+    }
 
     if (SpeechRecognition) {
-
       recognition = new SpeechRecognition();
-
       recognition.lang = "ko-KR";
       recognition.continuous = false;
       recognition.interimResults = false;
 
-      micButton.onclick = function () {
-        result.innerText = "🎤 듣고 있습니다...";
-        recognition.start();
+      recognition.onstart = function () {
+        isListening = true;
+        micButton.textContent = "🎤 듣는 중...";
+        status.textContent = "질문을 듣고 있습니다.";
       };
 
       recognition.onresult = function (event) {
+        const question = event.results[0][0].transcript;
+        lastAnswer = findAnswer(question);
 
-        const text = event.results[0][0].transcript;
+        result.textContent =
+          "내 질문:\n" + question +
+          "\n\n정약용의 답변:\n" + lastAnswer;
 
-        result.innerText = "내 질문:\n" + text;
-
-        // 현재는 테스트 단계라서
-        // 내가 말한 내용을 그대로 음성으로 읽습니다.
-        speak(text);
+        status.textContent = "답변이 준비되었습니다. 버튼을 눌러 들어 보세요.";
       };
 
       recognition.onerror = function (event) {
-        result.innerText =
-          "음성 인식 오류가 발생했습니다.\n오류: " + event.error;
+        status.textContent = "음성 인식 오류: " + event.error +
+          " — 마이크 권한과 브라우저 설정을 확인해 주세요.";
       };
 
+      recognition.onend = function () {
+        isListening = false;
+        micButton.textContent = "🎤 질문하기";
+      };
+
+      micButton.onclick = function () {
+        if (isListening) {
+          recognition.stop();
+          return;
+        }
+        try {
+          recognition.start();
+        } catch (error) {
+          status.textContent = "잠시 후 다시 질문해 주세요.";
+        }
+      };
     } else {
-
-      result.innerText =
-        "이 브라우저에서는 음성 인식을 지원하지 않습니다.";
-    }
-
-    function speak(text) {
-
-      speechSynthesis.cancel();
-
-      const utterance =
-        new SpeechSynthesisUtterance(text);
-
-      utterance.lang = "ko-KR";
-      utterance.rate = 0.9;
-
-      speechSynthesis.speak(utterance);
+      status.textContent =
+        "이 브라우저에서는 음성 인식을 지원하지 않습니다. iPad Safari에서 열어 주세요.";
+      micButton.disabled = true;
     }
 
     speakButton.onclick = function () {
-
-      const text = result.innerText
-        .replace("내 질문:\n", "");
-
-      if (text.trim()) {
-        speak(text);
+      if (lastAnswer) {
+        speak(lastAnswer);
+      } else {
+        status.textContent = "먼저 질문을 해 주세요.";
       }
     };
-  </script>
 
+    window.speechSynthesis.onvoiceschanged = function () {};
+  </script>
 </body>
 </html>
