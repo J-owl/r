@@ -78,34 +78,58 @@
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     function findAnswer(question) {
-      const q = question.replace(/\s/g, "").toLowerCase();
-
-      // 질문의 핵심 주제를 우선 판별합니다.
-      if (q.includes("목민심서") || q.includes("목민")) {
-        return answers[0].answer;
-      }
-      if (q.includes("서흥현감") || q.includes("김천의") ||
-          q.includes("토산") || q.includes("검시") ||
-          q.includes("아전") || q.includes("돈만밝히")) {
-        return answers[2].answer;
-      }
-      if (q.includes("흠흠신서") || q.includes("형사사건") ||
-          q.includes("처형") || q.includes("심리")) {
-        return answers[1].answer;
-      }
-
-      for (const item of answers) {
-        if (item.keywords.some(word =>
-          q.includes(word.replace(/\s/g, "").toLowerCase())
-        )) {
-          return item.answer;
-        }
-      }
-
-      return "그 질문에 맞는 답변은 아직 준비된 대본에서 찾지 못했소. 목민심서, 흠흠신서 또는 서흥 현감 사건에 관해 다시 질문해 주시오.";
-    }
-
-    function speak(text) {
+  const q = question
+    .replace(/\s/g, "")
+    .replace(/[.,?!~。，？！]/g, "")
+    .toLowerCase();
+  // 목민심서 관련 질문
+  const mokminKeywords = [
+    "목민심서", "목민", "지방수령", "백성", "애민",
+    "청렴", "목민관", "수령", "백성을위해",
+    "목민심서는왜", "목민심서배경"
+  ];
+  // 서흥 현감 관련 질문
+  const seoheungKeywords = [
+    "서흥현감", "서흥", "김천의", "토산",
+    "검시", "아전", "돈만밝히", "현감",
+    "검시절차", "조사방법", "보고서"
+  ];
+  // 흠흠신서 관련 질문
+  const heumheumKeywords = [
+    "흠흠신서", "형사사건", "처형", "심리",
+    "사건조사", "재판", "형벌", "관리",
+    "흠흠", "사람을심문"
+  ];
+  const hasKeyword = (keywords) =>
+    keywords.some(word => q.includes(word));
+  // 책 이름을 직접 말하면 해당 답변을 우선합니다.
+  if (q.includes("목민심서") || q.includes("목민")) {
+    return answers[0].answer;
+  }
+  if (q.includes("흠흠신서") || q.includes("흠흠")) {
+    return answers[1].answer;
+  }
+  if (
+    q.includes("서흥") ||
+    q.includes("김천의") ||
+    q.includes("토산") ||
+    q.includes("검시") ||
+    q.includes("아전")
+  ) {
+    return answers[2].answer;
+  }
+  if (hasKeyword(mokminKeywords)) {
+    return answers[0].answer;
+  }
+  if (hasKeyword(heumheumKeywords)) {
+    return answers[1].answer;
+  }
+  if (hasKeyword(seoheungKeywords)) {
+    return answers[2].answer;
+  }
+  return "질문을 정확히 알아듣지 못했소. 다시 한 번 천천히 질문해 주시오. 목민심서, 흠흠신서 또는 서흥 현감 사건에 관해 물어보면 답할 수 있소.";
+}
+function speak(text) {```
       if (!text) return;
 
       window.speechSynthesis.cancel();
