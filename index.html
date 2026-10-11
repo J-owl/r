@@ -2,209 +2,271 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>정약용 음성 인터뷰</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      padding: 30px 20px;
-      background: #f5f5f5;
-      color: #222;
-    }
-    h1 { margin-bottom: 30px; }
-    button {
-      font-size: 20px;
-      padding: 15px 25px;
-      margin: 10px;
-      border-radius: 12px;
-      border: none;
-      cursor: pointer;
-    }
-    #micButton { background: #222; color: white; }
-    #speakButton { background: #555; color: white; }
-    #result {
-      margin-top: 30px;
-      padding: 20px;
-      background: white;
-      border-radius: 15px;
-      min-height: 100px;
-      font-size: 18px;
-      line-height: 1.7;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-    }
-    #status { color: #555; font-size: 14px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>정약용과의 가상 인터뷰</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: #f2eee5; color: #29271f;
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+    "Noto Sans KR", sans-serif;
+}
+main { max-width: 560px; margin: auto; padding: 20px 16px 36px; }
+header {
+  background: #293e35; color: #fff8e9; border-radius: 18px;
+  padding: 24px 20px; text-align: center;
+}
+h1 { font-size: 24px; margin: 0 0 10px; }
+header p { margin: 0; line-height: 1.6; font-size: 14px; }
+.panel {
+  background: white; border-radius: 16px; padding: 18px;
+  margin-top: 16px; box-shadow: 0 3px 12px #0000000b;
+}
+label { display: block; font-weight: 700; margin-bottom: 10px; }
+textarea {
+  width: 100%; min-height: 88px; resize: vertical; padding: 12px;
+  border: 1px solid #c9c7bd; border-radius: 10px;
+  font: inherit; font-size: 16px;
+}
+button {
+  border: 0; border-radius: 11px; padding: 13px 15px;
+  font: inherit; font-weight: 700; cursor: pointer;
+}
+button:focus, textarea:focus { outline: 3px solid #c3d7c8; }
+.primary { background: #315b46; color: white; width: 100%; margin-top: 10px; }
+.secondary { background: #e8eee8; color: #244333; width: 100%; margin-top: 9px; }
+.small { background: #eee9df; color: #38352d; font-size: 14px; }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+#status { font-size: 14px; line-height: 1.6; color: #5a625a; margin: 12px 0 0; }
+.speaker { font-size: 12px; color: #6d756d; margin-bottom: 7px; }
+.bubble {
+  background: #f5f3ed; border-radius: 12px; padding: 14px;
+  line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere;
+}
+#answer { background: #eaf1e9; }
+.examples { display: flex; flex-wrap: wrap; gap: 8px; }
+.examples button { text-align: left; }
+footer { text-align: center; font-size: 12px; color: #77756d; padding: 20px 6px; }
+</style>
 </head>
 <body>
-  <h1>정약용 음성 인터뷰</h1>
-  <p>마이크 버튼을 누르고 질문해 보세요.</p>
+<main>
+<header>
+  <h1>정약용과의 가상 인터뷰</h1>
+  <p>역사 자료를 바탕으로 정약용 선생과 대화해 보세요.<br>
+  질문을 말하거나 직접 입력할 수 있습니다.</p>
+</header>
 
-  <button id="micButton">🎤 질문하기</button>
-  <p id="status">인터뷰를 시작할 준비가 되었습니다.</p>
+<section class="panel">
+  <label for="question">나의 질문</label>
+  <textarea id="question" placeholder="예: 목민심서는 왜 쓰셨나요?"></textarea>
+  <button id="ask" class="primary">질문하기</button>
+  <div class="actions">
+    <button id="mic" class="secondary">🎙️ 음성으로 질문</button>
+    <button id="stopMic" class="small">음성인식 중지</button>
+  </div>
+  <p id="status" role="status" aria-live="polite">질문을 입력하거나 음성 버튼을 눌러 주세요.</p>
+</section>
 
-  <div id="result">여기에 질문과 정약용의 답변이 표시됩니다.</div>
+<section class="panel">
+  <div class="speaker">나의 질문</div>
+  <div id="shownQuestion" class="bubble">아직 질문하지 않았습니다.</div>
+  <div class="speaker" style="margin-top:16px">정약용의 답변</div>
+  <div id="answer" class="bubble">질문을 기다리고 있습니다.</div>
+  <button id="speak" class="secondary">🔊 답변 다시 듣기</button>
+  <button id="stopVoice" class="small" style="width:100%;margin-top:8px">음성 재생 중지</button>
+</section>
 
-  <button id="speakButton">🔊 정약용 답변 듣기</button>
+<section class="panel">
+  <label>질문 예시</label>
+  <div class="examples">
+    <button class="small example">목민심서는 왜 쓰셨나요?</button>
+    <button class="small example">흠흠신서는 어떤 책인가요?</button>
+    <button class="small example">백성을 위해 어떤 일을 하셨나요?</button>
+    <button class="small example">유배 생활은 어떠셨나요?</button>
+  </div>
+</section>
 
-  <script>
-    const micButton = document.getElementById("micButton");
-    const speakButton = document.getElementById("speakButton");
-    const result = document.getElementById("result");
-    const status = document.getElementById("status");
+<footer>교육용 가상 인터뷰 · AI 음성은 실제 정약용의 목소리가 아닙니다.</footer>
+</main>
 
-    let lastAnswer = "";
-    let recognition;
-    let isListening = false;
+<script>
+(function () {
+  const question = document.getElementById("question");
+  const askButton = document.getElementById("ask");
+  const micButton = document.getElementById("mic");
+  const stopMicButton = document.getElementById("stopMic");
+  const speakButton = document.getElementById("speak");
+  const stopVoiceButton = document.getElementById("stopVoice");
+  const status = document.getElementById("status");
+  const shownQuestion = document.getElementById("shownQuestion");
+  const answerBox = document.getElementById("answer");
 
-    const answers = [
-      {
-        keywords: ["목민심서", "목민", "지방 수령", "애민 정신"],
-        answer: "목민심서는 제가 목민관으로 재직할 당시 목민할 마음은 가졌지만, 실천할 수 없었던 현실을 담은 책입니다. 이 목민심서에는 지방 수령으로서 지켜야 할 원칙과 규범들이 적혀 있고, 백성에 대한 연민과 동정을 표현하였습니다. 유교적 정치 질서 속에서 청렴과 애민으로 현실적 문제를 해결하기 위한 대안을 제시한 책이기도 합니다."
-      },
-      {
-        keywords: ["흠흠신서", "형사사건", "처형", "심리", "조사 과정"],
-        answer: "흠흠신서는 형사사건의 조사, 심리, 처형 과정을 다루는 관리들을 계몽하기 위해 집필된 책입니다. 지금 여러분이 살아가는 세상은 제가 살았던 시대와 굉장히 다릅니다. 당시에는 형사사건이 형식적이고 무성의하게 진행되는 경우가 있어 이에 관심을 가지게 되었지요."
-      },
-      {
-        keywords: ["서흥 현감", "서흥현감", "김천의", "토산", "검시", "아전", "돈만 밝히"],
-        answer: "말씀하신 것처럼 돈만 밝히는 아전이 너무나도 많았습니다만, 서흥 현감은 아랫사람들에게 맡기지 않고 검시 절차를 성심껏 밟아 그들과는 다른 모습을 보여주었습니다. 조사 방법이 탁월했을 뿐더러 보고서의 내용도 훌륭했습니다. 돈에 눈이 먼 자들 사이에서 서흥 현감과 같은 모범을 보여주는 현감을 찾기란 사막에서 바늘 찾기였습니다."
-      }
-    ];
+  let recognition = null;
+  let lastAnswer = "";
+  let listening = false;
 
+  function setStatus(message) {
+    status.textContent = message;
+  }
+
+  function answerQuestion(raw) {
+    const q = raw.trim();
+    if (!q) {
+      setStatus("먼저 질문을 입력해 주세요.");
+      question.focus();
+      return;
+    }
+
+    shownQuestion.textContent = q;
+    const text = q.replace(/\s/g, "");
+
+    let answer;
+    if (text.includes("목민심서") &&
+        (text.includes("왜") || text.includes("이유") || text.includes("배경") || text.includes("무엇"))) {
+      answer = "목민심서는 지방 수령이 백성을 어떻게 다스려야 하는지를 정리한 책이오. 관리가 사사로운 이익을 좇지 않고 백성을 위해 일해야 한다는 생각을 담았소. 내가 직접 보고 겪은 현실과 유교적 행정 원칙을 바탕으로 지방 행정의 문제를 바로잡고자 했소.";
+    } else if (text.includes("흠흠신서")) {
+      answer = "흠흠신서는 형사 사건을 조사하고 판결할 때 신중해야 한다는 점을 강조한 책이오. 사람의 생명과 관련된 판결은 억울함이 없도록 사실을 자세히 살피고, 증거를 신중하게 검토해야 한다고 보았소.";
+    } else if (text.includes("서흥") || text.includes("현감")) {
+      answer = "지방관의 중요한 임무는 백성을 보살피고 고을을 올바르게 다스리는 것이오. 어떤 관리의 행적을 평가할 때에는 백성에게 실제로 도움이 되었는지, 맡은 일을 공정하게 처리했는지를 살펴야 하오. 특정 인물이나 일화에 대한 질문이라면 수업에서 다룬 자료를 함께 확인하면 더 정확히 답할 수 있소.";
+    } else if (text.includes("유배")) {
+      answer = "유배 생활은 정치적으로 어려운 시기였지만, 학문을 깊이 연구하고 여러 저술을 남기는 시간이기도 했소. 현실의 문제를 살피며 백성의 삶을 개선할 방법을 고민했소.";
+    } else if (text.includes("백성") || text.includes("개혁") || text.includes("정치")) {
+      answer = "나라를 다스리는 일은 백성의 삶을 살피는 데서 출발해야 한다고 생각했소. 관리의 탐욕과 부패를 경계하고, 제도와 행정을 고쳐 백성의 부담을 줄이는 것이 중요하다고 보았소.";
+    } else if (text.includes("거중기") || text.includes("수원 화성") || text.includes("화성")) {
+      answer = "나는 실용적인 지식과 기술이 사회에 도움이 되어야 한다고 생각했소. 수원 화성 축성에 사용된 거중기는 무거운 물체를 들어 올리는 데 도움을 준 기구로 알려져 있소. 다만 화성 축성에는 여러 기술자와 기술이 함께 활용되었소.";
+    } else if (text.includes("실학")) {
+      answer = "실학은 실제 생활과 사회 문제에 도움이 되는 학문을 추구한 흐름이오. 나는 백성의 삶을 개선하고 행정과 제도를 바로잡는 데 학문이 쓰여야 한다고 생각했소.";
+    } else if (text.includes("안녕") || text.includes("반갑")) {
+      answer = "반갑소. 나는 정약용이라는 역사 인물을 바탕으로 재현된 가상 인터뷰 속 인물이오. 궁금한 점을 물어보시오.";
+    } else {
+      answer = "좋은 질문이오. 나는 백성의 삶을 개선하고, 관리의 책임과 공정한 행정을 중요하게 생각했소. 다만 이 질문에 대한 구체적인 역사적 사실은 확인된 자료를 바탕으로 답하는 것이 옳소. 수업에서 제공된 자료나 관련 문장을 입력하면 그 내용을 토대로 답변을 정리할 수 있소.";
+    }
+
+    lastAnswer = answer;
+    answerBox.textContent = answer;
+    setStatus("답변을 준비했습니다.");
+    speakAnswer();
+  }
+
+  function speakAnswer() {
+    if (!lastAnswer) {
+      setStatus("먼저 질문을 해 주세요.");
+      return;
+    }
+    if (!("speechSynthesis" in window)) {
+      setStatus("이 브라우저에서는 음성 읽기를 지원하지 않습니다. 답변은 화면에서 확인해 주세요.");
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(lastAnswer);
+    utterance.lang = "ko-KR";
+    utterance.rate = 0.88;
+    utterance.pitch = 0.85;
+    utterance.onstart = function () { setStatus("정약용의 답변을 읽고 있습니다."); };
+    utterance.onend = function () { setStatus("답변 읽기가 끝났습니다."); };
+    utterance.onerror = function () { setStatus("음성 재생이 되지 않으면 답변을 화면에서 읽어 주세요."); };
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function stopListening() {
+    if (recognition && listening) {
+      try { recognition.stop(); } catch (e) {}
+    }
+    listening = false;
+    micButton.disabled = false;
+  }
+
+  askButton.addEventListener("click", function () {
+    answerQuestion(question.value);
+  });
+
+  question.addEventListener("keydown", function (event) {
+    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+      answerQuestion(question.value);
+    }
+  });
+
+  document.querySelectorAll(".example").forEach(function (button) {
+    button.addEventListener("click", function () {
+      question.value = button.textContent;
+      answerQuestion(question.value);
+    });
+  });
+
+  speakButton.addEventListener("click", speakAnswer);
+
+  stopVoiceButton.addEventListener("click", function () {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    setStatus("음성 재생을 중지했습니다.");
+  });
+
+  stopMicButton.addEventListener("click", function () {
+    stopListening();
+    setStatus("음성인식을 중지했습니다. 질문을 직접 입력해도 됩니다.");
+  });
+
+  micButton.addEventListener("click", function () {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    function findAnswer(question) {
-  const q = question
-    .replace(/\s/g, "")
-    .replace(/[.,?!~。，？！]/g, "")
-    .toLowerCase();
-  // 목민심서 관련 질문
-  const mokminKeywords = [
-    "목민심서", "목민", "지방수령", "백성", "애민",
-    "청렴", "목민관", "수령", "백성을위해",
-    "목민심서는왜", "목민심서배경"
-  ];
-  // 서흥 현감 관련 질문
-  const seoheungKeywords = [
-    "서흥현감", "서흥", "김천의", "토산",
-    "검시", "아전", "돈만밝히", "현감",
-    "검시절차", "조사방법", "보고서"
-  ];
-  // 흠흠신서 관련 질문
-  const heumheumKeywords = [
-    "흠흠신서", "형사사건", "처형", "심리",
-    "사건조사", "재판", "형벌", "관리",
-    "흠흠", "사람을심문"
-  ];
-  const hasKeyword = (keywords) =>
-    keywords.some(word => q.includes(word));
-  // 책 이름을 직접 말하면 해당 답변을 우선합니다.
-  if (q.includes("목민심서") || q.includes("목민")) {
-    return answers[0].answer;
-  }
-  if (q.includes("흠흠신서") || q.includes("흠흠")) {
-    return answers[1].answer;
-  }
-  if (
-    q.includes("서흥") ||
-    q.includes("김천의") ||
-    q.includes("토산") ||
-    q.includes("검시") ||
-    q.includes("아전")
-  ) {
-    return answers[2].answer;
-  }
-  if (hasKeyword(mokminKeywords)) {
-    return answers[0].answer;
-  }
-  if (hasKeyword(heumheumKeywords)) {
-    return answers[1].answer;
-  }
-  if (hasKeyword(seoheungKeywords)) {
-    return answers[2].answer;
-  }
-  return "질문을 정확히 알아듣지 못했소. 다시 한 번 천천히 질문해 주시오. 목민심서, 흠흠신서 또는 서흥 현감 사건에 관해 물어보면 답할 수 있소.";
-}
-function speak(text) {```
-      if (!text) return;
-
-      window.speechSynthesis.cancel();
-
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "ko-KR";
-      utterance.rate = 0.88;
-      utterance.pitch = 0.85;
-
-      const voices = window.speechSynthesis.getVoices();
-      const koreanVoice = voices.find(v => v.lang.toLowerCase().startsWith("ko"));
-      if (koreanVoice) utterance.voice = koreanVoice;
-
-      window.speechSynthesis.speak(utterance);
+    if (!SpeechRecognition) {
+      setStatus("이 브라우저에서는 음성인식을 지원하지 않습니다. 위 입력창에 질문을 직접 입력해 주세요.");
+      question.focus();
+      return;
     }
 
-    if (SpeechRecognition) {
+    try {
       recognition = new SpeechRecognition();
       recognition.lang = "ko-KR";
       recognition.continuous = false;
-      recognition.interimResults = false;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
 
       recognition.onstart = function () {
-        isListening = true;
-        micButton.textContent = "🎤 듣는 중...";
-        status.textContent = "질문을 듣고 있습니다.";
+        listening = true;
+        micButton.disabled = true;
+        setStatus("듣고 있습니다. 질문을 말씀해 주세요.");
       };
 
       recognition.onresult = function (event) {
-        const question = event.results[0][0].transcript;
-        lastAnswer = findAnswer(question);
-
-        result.textContent =
-          "내 질문:\n" + question +
-          "\n\n정약용의 답변:\n" + lastAnswer;
-
-        status.textContent = "답변이 준비되었습니다. 버튼을 눌러 들어 보세요.";
+        let transcript = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        question.value = transcript;
+        setStatus("인식한 내용: " + transcript);
+        const latest = event.results[event.results.length - 1];
+        if (latest && latest.isFinal) {
+          answerQuestion(transcript);
+        }
       };
 
       recognition.onerror = function (event) {
-        status.textContent = "음성 인식 오류: " + event.error +
-          " — 마이크 권한과 브라우저 설정을 확인해 주세요.";
+        const messages = {
+          "not-allowed": "마이크 권한이 차단되어 있습니다. Safari 설정에서 마이크 권한을 확인하거나 질문을 직접 입력해 주세요.",
+          "service-not-allowed": "브라우저의 음성인식 서비스를 사용할 수 없습니다. 질문을 직접 입력해 주세요.",
+          "network": "음성인식 네트워크 오류입니다. 인터넷 연결을 확인하거나 직접 입력해 주세요.",
+          "no-speech": "음성이 감지되지 않았습니다. 다시 누르고 또렷하게 말씀해 주세요.",
+          "audio-capture": "마이크를 사용할 수 없습니다. 마이크 설정을 확인해 주세요."
+        };
+        setStatus(messages[event.error] || ("음성인식 오류: " + event.error + ". 질문을 직접 입력해도 됩니다."));
       };
 
       recognition.onend = function () {
-        isListening = false;
-        micButton.textContent = "🎤 질문하기";
+        listening = false;
+        micButton.disabled = false;
       };
 
-      micButton.onclick = function () {
-        if (isListening) {
-          recognition.stop();
-          return;
-        }
-        try {
-          recognition.start();
-        } catch (error) {
-          status.textContent = "잠시 후 다시 질문해 주세요.";
-        }
-      };
-    } else {
-      status.textContent =
-        "이 브라우저에서는 음성 인식을 지원하지 않습니다. iPad Safari에서 열어 주세요.";
-      micButton.disabled = true;
+      recognition.start();
+    } catch (error) {
+      listening = false;
+      micButton.disabled = false;
+      setStatus("음성인식을 시작하지 못했습니다. 질문을 직접 입력해 주세요.");
     }
-
-    speakButton.onclick = function () {
-      if (lastAnswer) {
-        speak(lastAnswer);
-      } else {
-        status.textContent = "먼저 질문을 해 주세요.";
-      }
-    };
-
-    window.speechSynthesis.onvoiceschanged = function () {};
-  </script>
+  });
+})();
+</script>
 </body>
 </html>
